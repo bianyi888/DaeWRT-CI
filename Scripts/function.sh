@@ -14,7 +14,9 @@ CONFIG_NET_SCH_INGRESS=m
 CONFIG_NET_CLS_BPF=m
 CONFIG_NET_CLS_ACT=y
 CONFIG_BPF_STREAM_PARSER=y
-# CONFIG_DEBUG_INFO_BTF is not set
+CONFIG_DEBUG_INFO=y
+# CONFIG_DEBUG_INFO_REDUCED is not set
+CONFIG_DEBUG_INFO_BTF=y
 CONFIG_KPROBE_EVENTS=y
 CONFIG_BPF_EVENTS=y
 
@@ -32,6 +34,7 @@ EOF
     echo "cat_kernel_config to $1 done"
   fi
 }
+
 
 function cat_ebpf_config() {
 
