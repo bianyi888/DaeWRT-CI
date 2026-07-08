@@ -133,9 +133,6 @@ function update_apt_source() {
 				deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
 				deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
 
-				# deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-proposed main restricted universe multiverse
-				# deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-proposed main restricted universe multiverse
-
 				deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
 				deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
 			EOF
@@ -201,12 +198,6 @@ function update_apt_source() {
 	EOF
 	curl -fsL "https://apt.llvm.org/llvm-snapshot.gpg.key" -o "/etc/apt/trusted.gpg.d/llvm-toolchain.asc"
 
-	cat <<-EOF >"/etc/apt/sources.list.d/longsleep-ubuntu-golang-backports-$UBUNTU_CODENAME.list"
-		deb https://ppa.launchpadcontent.net/longsleep/golang-backports/ubuntu $UBUNTU_CODENAME main
-		deb-src https://ppa.launchpadcontent.net/longsleep/golang-backports/ubuntu $UBUNTU_CODENAME main
-	EOF
-	curl -fsL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x876b22ba887ca91614b5323fc631127f87fa12d1" -o "/etc/apt/trusted.gpg.d/longsleep-ubuntu-golang-backports-$UBUNTU_CODENAME.asc"
-
 	cat <<-EOF >"/etc/apt/sources.list.d/github-cli.list"
 		deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main
 	EOF
@@ -221,11 +212,14 @@ function update_apt_source() {
 
 	set +x
 }
+
 function install_dependencies() {
 	__info_msg "Installing dependencies..."
 	set -x
 
 	apt full-upgrade -y $BPO_FLAG
+	
+	# 【核心修复】：注入了 libbpf-dev 和 linux-libc-dev 确保 eBPF 引擎顺利编译
 	apt install -y $BPO_FLAG ack antlr3 asciidoc autoconf automake autopoint binutils bison \
 		build-essential bzip2 ccache cmake cpio curl device-tree-compiler ecj fakeroot \
 		fastjar flex gawk gettext genisoimage gnutls-dev gperf haveged help2man intltool \
@@ -235,7 +229,7 @@ function install_dependencies() {
 		pkgconf libpython3-dev python3 python3-pip python3-cryptography python3-docutils \
 		python3-ply python3-pyelftools python3-requests qemu-utils quilt re2c rsync scons \
 		sharutils squashfs-tools subversion swig texinfo uglifyjs unzip vim wget xmlto \
-		zlib1g-dev zstd xxd $VERSION_PACKAGE
+		zlib1g-dev zstd xxd libbpf-dev linux-libc-dev $VERSION_PACKAGE
 
 	if [ -n "$CHN_NET" ]; then
 		pip3 config set global.index-url "https://mirrors.aliyun.com/pypi/simple/"
@@ -257,22 +251,17 @@ function install_dependencies() {
 	done
 	ln -svf "/usr/lib/llvm-$LLVM_VERSION" "/usr/lib/llvm"
 
+	# 【核心修复】：除了 nodejs 和 yarn，全局补全 pnpm (daede 面板打包强依赖)
 	apt install -y $BPO_FLAG nodejs yarn
+	npm install -g pnpm
 	if [ -n "$CHN_NET" ]; then
 		npm config set registry "https://registry.npmmirror.com" --global
 		yarn config set registry "https://registry.npmmirror.com" --global
 	fi
 
-	apt install -y $BPO_FLAG golang-1.26-go
-	rm -rf "/usr/bin/go" "/usr/bin/gofmt"
-	ln -svf "/usr/lib/go-1.26/bin/go" "/usr/bin/go"
-	ln -svf "/usr/lib/go-1.26/bin/gofmt" "/usr/bin/gofmt"
-	if [ -n "$CHN_NET" ]; then
-		go env -w GOPROXY=https://goproxy.cn,direct
-	fi
+	# 【核心修复】：已物理删除这里自带的 golang 安装代码，防止破坏我们在 YAML 里的 setup-go 环境
 
 	apt install gh -y
-
 	apt clean -y
 
 	if TMP_DIR="$(mktemp -d)"; then
@@ -293,35 +282,4 @@ function install_dependencies() {
 	curl -fLO "https://raw.githubusercontent.com/openwrt/openwrt/main/tools/padjffs2/src/padjffs2.c"
 	gcc -Wall -Werror -o "padjffs2" "padjffs2.c"
 	strip "padjffs2"
-	rm -rf "padjffs2.c" "/usr/bin/padjffs2"
-	cp -fp "padjffs2" "/usr/bin/padjffs2"
-
-	git clone --filter=blob:none --no-checkout "https://github.com/openwrt/luci.git" "po2lmo"
-	pushd "po2lmo"
-	git config core.sparseCheckout true
-	echo "modules/luci-base/src" >> ".git/info/sparse-checkout"
-	git checkout
-	cd "modules/luci-base/src"
-	make po2lmo
-	strip "po2lmo"
-	rm -rf "/usr/bin/po2lmo"
-	cp -fp "po2lmo" "/usr/bin/po2lmo"
-	popd
-
-	curl -fL "https://build-scripts.immortalwrt.org/modify-firmware.sh" -o "/usr/bin/modify-firmware"
-	chmod 0755 "/usr/bin/modify-firmware"
-
-	popd
-	rm -rf "$TMP_DIR"
-
-	set +x
-	__success_msg "All dependencies have been installed."
-}
-function main() {
-	check_system
-	check_network
-	update_apt_source
-	install_dependencies
-}
-
-main
+	rm -rf "padjffs2.c" "/
