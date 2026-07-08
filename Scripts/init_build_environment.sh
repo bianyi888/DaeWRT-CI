@@ -119,69 +119,9 @@ function update_apt_source() {
 
 	if [ -n "$CHN_NET" ]; then
 		mv "/etc/apt/sources.list" "/etc/apt/sources.list.bak"
-		mv "/etc/apt/sources.list.d/debian.sources" "/etc/apt/sources.list.d/debian.sources.bak"
-		mv "/etc/apt/sources.list.d/ubuntu.sources" "/etc/apt/sources.list.d/ubuntu.sources.bak"
+		mv "/etc/apt/sources.list.d/debian.sources" "/etc/apt/sources.list.d/debian.sources.bak" 2>/dev/null || true
+		mv "/etc/apt/sources.list.d/ubuntu.sources" "/etc/apt/sources.list.d/ubuntu.sources.bak" 2>/dev/null || true
 
 		if [ "$VERSION_CODENAME" == "$UBUNTU_CODENAME" ]; then
-cat <<EOF >"/etc/apt/sources.list"
-deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME main restricted universe multiverse
-deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME main restricted universe multiverse
-deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-security main restricted universe multiverse
-deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-security main restricted universe multiverse
-deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
-deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
-deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
-deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
-EOF
-		elif [ "$VERSION_CODENAME" == "buster" ]; then
-cat <<EOF >"/etc/apt/sources.list"
-deb https://mirrors.tuna.tsinghua.edu.cn/debian-elts $VERSION_CODENAME main contrib non-free
-EOF
-			curl -fsL "https://deb.freexian.com/extended-lts/archive-key.gpg" -o "/etc/apt/trusted.gpg.d/extended-lts.gpg"
-		else
-cat <<EOF >"/etc/apt/sources.list"
-deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME main contrib non-free${APT_COMP:+ $APT_COMP}
-deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME main contrib non-free${APT_COMP:+ $APT_COMP}
-deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian-security ${DISTRO_SECUTIRY_PATH:-$VERSION_CODENAME-security} main contrib non-free${APT_COMP:+ $APT_COMP}
-deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian-security ${DISTRO_SECUTIRY_PATH:-$VERSION_CODENAME-security} main contrib non-free${APT_COMP:+ $APT_COMP}
-deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME-updates main contrib non-free${APT_COMP:+ $APT_COMP}
-deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME-updates main contrib non-free${APT_COMP:+ $APT_COMP}
-deb https://mirrors.cloud.tencent.com/${BPO_DISTRO_PREFIX:-$DISTRO_PREFIX}debian/ $VERSION_CODENAME-backports main contrib non-free${APT_COMP:+ $APT_COMP}
-deb-src https://mirrors.cloud.tencent.com/${BPO_DISTRO_PREFIX:-$DISTRO_PREFIX}debian/ $VERSION_CODENAME-backports main contrib non-free${APT_COMP:+ $APT_COMP}
-EOF
-		fi
-	else
-		if [ "$VERSION_CODENAME" == "buster" ]; then
-			mv "/etc/apt/sources.list" "/etc/apt/sources.list.bak"
-cat <<EOF >"/etc/apt/sources.list"
-deb https://deb.freexian.com/extended-lts $VERSION_CODENAME main contrib non-free
-EOF
-			curl -fsL "https://deb.freexian.com/extended-lts/archive-key.gpg" -o "/etc/apt/trusted.gpg.d/extended-lts.gpg"
-		fi
-	fi
-
-cat <<EOF >"/etc/apt/sources.list.d/nodesource.list"
-deb https://deb.nodesource.com/node_${NODE_VERSION:-22}.x ${NODE_DISTRO:-nodistro} main
-EOF
-	curl -fsL "https://deb.nodesource.com/gpgkey/${NODE_KEY:-nodesource-repo.gpg.key}" -o "/etc/apt/trusted.gpg.d/nodesource.asc"
-
-cat <<EOF >"/etc/apt/sources.list.d/yarn.list"
-deb https://dl.yarnpkg.com/debian/ stable main
-EOF
-	curl -fsL "https://dl.yarnpkg.com/debian/pubkey.gpg" -o "/etc/apt/trusted.gpg.d/yarn.asc"
-
-	case "$VERSION_CODENAME" in
-	"bionic"|"buster")
-cat <<EOF >"/etc/apt/sources.list.d/gcc-toolchain.list"
-deb https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu $UBUNTU_CODENAME main
-deb-src https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu $UBUNTU_CODENAME main
-EOF
-		curl -fsL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x1e9377a2ba9ef27f" -o "/etc/apt/trusted.gpg.d/gcc-toolchain.asc"
-		;;
-	esac
-
-cat <<EOF >"/etc/apt/sources.list.d/git-core-ubuntu-ppa.list"
-deb https://ppa.launchpadcontent.net/git-core/ppa/ubuntu $UBUNTU_CODENAME main
-deb-src https://ppa.launchpadcontent.net/git-core/ppa/ubuntu $UBUNTU_CODENAME main
-EOF
-	curl -fsL "
+			echo "deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME main restricted universe multiverse" > "/etc/apt/sources.list"
+			echo "deb-src https://mir
