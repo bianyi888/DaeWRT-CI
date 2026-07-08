@@ -14,9 +14,7 @@ CONFIG_NET_SCH_INGRESS=m
 CONFIG_NET_CLS_BPF=m
 CONFIG_NET_CLS_ACT=y
 CONFIG_BPF_STREAM_PARSER=y
-CONFIG_DEBUG_INFO=y
-# CONFIG_DEBUG_INFO_REDUCED is not set
-CONFIG_DEBUG_INFO_BTF=y
+# CONFIG_DEBUG_INFO_BTF is not set
 CONFIG_KPROBE_EVENTS=y
 CONFIG_BPF_EVENTS=y
 
@@ -37,17 +35,13 @@ EOF
 
 function cat_ebpf_config() {
 
-#ebpf相关
+#ebpf相关 (已排雷：移除高通内核冲突的 BTF 调试开关)
   cat >> $1 <<EOF
 #eBPF
 CONFIG_DEVEL=y
-CONFIG_KERNEL_DEBUG_INFO=y
-CONFIG_KERNEL_DEBUG_INFO_REDUCED=n
-CONFIG_KERNEL_DEBUG_INFO_BTF=y
 CONFIG_KERNEL_CGROUPS=y
 CONFIG_KERNEL_CGROUP_BPF=y
 CONFIG_KERNEL_BPF_EVENTS=y
-CONFIG_BPF_TOOLCHAIN_HOST=y
 CONFIG_KERNEL_XDP_SOCKETS=y
 CONFIG_PACKAGE_kmod-xdp-sockets-diag=y
 
@@ -102,9 +96,11 @@ CONFIG_PACKAGE_kmod-qca-nss-drv-l2tpv2=y
 CONFIG_PACKAGE_kmod-qca-nss-drv-lag-mgr=y
 EOF
 }
+
 function kernel_version() {
   echo $(sed -n 's/^KERNEL_PATCHVER:=\(.*\)/\1/p' target/linux/qualcommax/Makefile)
 }
+
 function remove_wifi() {
   local target=$1
   #去除依赖
@@ -131,6 +127,7 @@ function set_kernel_size() {
   sed -i "/^define Device\/linksys_mr7350/,/^endef/ s/^endef/\tIMAGE_SIZE := 12288k\nendef/" $image_file
   cat $image_file
 }
+
 #开启内存回收补丁
 function enable_skb_recycler() {
   cat >> $1 <<EOF
@@ -158,7 +155,3 @@ function generate_config() {
   #增加内核选项
   cat_kernel_config "target/linux/qualcommax/${target}/config-default"
 }
-
-
-
-
