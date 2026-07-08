@@ -121,12 +121,13 @@ rm -rf ../feeds/luci/applications/luci-app-{passwall*,mosdns,dockerman,dae*,bypa
 rm -rf ../feeds/packages/net/{v2ray-geodata,dae*}
 cp -r $GITHUB_WORKSPACE/package/* ./
 
-# ==================== 【全局跨核心路径双向对齐守护补丁】 ====================
-# 动态定位 v2ray-geodata 路径，向其中注入 daed 的地理文件软连接，确保 eBPF 核心不抓瞎
-GEODATA_MAKEFILE=$(find ../feeds/packages/ -maxdepth 4 -type f -wholename "*/v2ray-geodata/Makefile" 2>/dev/null | head -n 1)
+# ==================== 【全局跨核心路径双向对齐守护补丁 V2】 ====================
+# 动态定位 v2ray-geodata 路径（同时搜索 feeds 目录和本地 package 目录）
+GEODATA_MAKEFILE=$(find ../feeds/packages/ ./ -maxdepth 4 -type f -wholename "*/v2ray-geodata/Makefile" 2>/dev/null | head -n 1)
 if [ -n "$GEODATA_MAKEFILE" ] && [ -f "$GEODATA_MAKEFILE" ]; then
-	echo "[路径对齐] 正在为 v2ray-geodata 织入 daed 核心软连接补丁..."
+	echo "[路径对齐] 成功定位到 $GEODATA_MAKEFILE，正在织入 daed 核心软连接补丁..."
 	sed -i '/usr\/share\/v2ray\/geoip.dat/a \\t\$(INSTALL_DIR) \$(1)\/usr\/share\/daed\n\t\$(LN) ..\/v2ray\/geoip.dat \$(1)\/usr\/share\/daed\/geoip.dat' "$GEODATA_MAKEFILE"
 	sed -i '/usr\/share\/v2ray\/geosite.dat/a \\t\$(INSTALL_DIR) \$(1)\/usr\/share\/daed\n\t\$(LN) ..\/v2ray\/geosite.dat \$(1)\/usr\/share\/daed\/geosite.dat' "$GEODATA_MAKEFILE"
+	echo "[路径对齐] 守护补丁注入成功！"
 fi
 # ===========================================================================
