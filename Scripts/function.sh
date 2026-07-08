@@ -35,16 +35,17 @@ EOF
   fi
 }
 
-
 function cat_ebpf_config() {
-
-#ebpf相关 (已排雷：移除高通内核冲突的 BTF 调试开关)
   cat >> $1 <<EOF
 #eBPF
 CONFIG_DEVEL=y
+CONFIG_KERNEL_DEBUG_INFO=y
+CONFIG_KERNEL_DEBUG_INFO_REDUCED=n
+CONFIG_KERNEL_DEBUG_INFO_BTF=y
 CONFIG_KERNEL_CGROUPS=y
 CONFIG_KERNEL_CGROUP_BPF=y
 CONFIG_KERNEL_BPF_EVENTS=y
+CONFIG_BPF_TOOLCHAIN_HOST=y
 CONFIG_KERNEL_XDP_SOCKETS=y
 CONFIG_PACKAGE_kmod-xdp-sockets-diag=y
 
@@ -78,7 +79,6 @@ CONFIG_PACKAGE_kmod-usb-net-qmi-wwan-fibocom=y
 CONFIG_PACKAGE_kmod-usb-net-qmi-wwan-quectel=y
 EOF
 fi
-
 }
 
 function set_nss_driver() {
