@@ -41,9 +41,6 @@ UPDATE_PACKAGE() {
 }
 
 # 调用示例
-# UPDATE_PACKAGE "OpenAppFilter" "destan19/OpenAppFilter" "master" "" "custom_name1 custom_name2"
-# UPDATE_PACKAGE "open-app-filter" "destan19/OpenAppFilter" "master" "" "luci-app-appfilter oaf" 这样会把原有的open-app-filter，luci-app-appfilter，oaf相关组件删除，不会出现coremark错误。
-
 # UPDATE_PACKAGE "包名" "项目地址" "项目分支" "pkg/name，可选，pkg为从大杂烩中单独提取包名插件；name为重命名为包名"
 UPDATE_PACKAGE "argon" "sbwml/luci-theme-argon" "openwrt-25.12"
 UPDATE_PACKAGE "aurora" "eamonxg/luci-theme-aurora" "master"
@@ -54,20 +51,13 @@ UPDATE_PACKAGE "kucat-config" "sirpdboy/luci-app-kucat-config" "master"
 UPDATE_PACKAGE "homeproxy" "VIKINGYFY/homeproxy" "main"
 UPDATE_PACKAGE "momo" "nikkinikki-org/OpenWrt-momo" "main"
 UPDATE_PACKAGE "nikki" "nikkinikki-org/OpenWrt-nikki" "main"
-#UPDATE_PACKAGE "openclash" "vernesong/OpenClash" "dev" "pkg"
-#UPDATE_PACKAGE "passwall" "Openwrt-Passwall/openwrt-passwall" "main" "pkg"
-#UPDATE_PACKAGE "passwall2" "Openwrt-Passwall/openwrt-passwall2" "main" "pkg"
 
-#UPDATE_PACKAGE "luci-app-tailscale" "asvow/luci-app-tailscale" "main"
-
-#UPDATE_PACKAGE "athena-led" "unraveloop/JDC-AX6600-Athena-LED-Controller" "main"
 UPDATE_PACKAGE "ddns-go" "sirpdboy/luci-app-ddns-go" "main"
 UPDATE_PACKAGE "diskman" "lisaac/luci-app-diskman" "master"
 UPDATE_PACKAGE "easytier" "EasyTier/luci-app-easytier" "main"
 UPDATE_PACKAGE "fancontrol" "rockjake/luci-app-fancontrol" "main"
 UPDATE_PACKAGE "gecoosac" "openwrt-fork/openwrt-gecoosac" "main"
 UPDATE_PACKAGE "mosdns" "sbwml/luci-app-mosdns" "v5" "" "v2dat"
-#UPDATE_PACKAGE "netspeedtest" "sirpdboy/luci-app-netspeedtest" "master" "" "homebox speedtest"
 UPDATE_PACKAGE "openlist2" "sbwml/luci-app-openlist2" "main"
 UPDATE_PACKAGE "partexp" "sirpdboy/luci-app-partexp" "main"
 UPDATE_PACKAGE "qbittorrent" "sbwml/luci-app-qbittorrent" "master" "" "qt6base qt6tools rblibtorrent"
@@ -75,13 +65,16 @@ UPDATE_PACKAGE "qmodem" "FUjr/QModem" "main"
 UPDATE_PACKAGE "quickfile" "sbwml/luci-app-quickfile" "main"
 UPDATE_PACKAGE "viking" "VIKINGYFY/packages" "main" "" "luci-app-timewol luci-app-wolplus"
 UPDATE_PACKAGE "vnt" "lmq8267/luci-app-vnt" "main"
-UPDATE_PACKAGE "vnt" "kenzok8/openwrt-daede" "main"
 
-
-UPDATE_PACKAGE "luci-app-daed" "QiuSimons/luci-app-daed" "kix"
+# ==================== 【科学与扩展组件】 ====================
 UPDATE_PACKAGE "luci-app-pushbot" "zzsj0928/luci-app-pushbot" "master"
 UPDATE_PACKAGE "luci-app-lucky" "gdy666/luci-app-lucky" "main"
 UPDATE_PACKAGE "luci-app-nginx-manager" "hello-yunshu/luci-app-nginx-manager" "main"
+
+# 引入下一代 kenzok8/daede，并清理所有旧版可能残留的冲突包
+UPDATE_PACKAGE "daede" "kenzok8/openwrt-daede" "main" "name" "luci-app-daed luci-app-daede daed dae"
+# ==========================================================
+
 #更新软件包版本
 UPDATE_VERSION() {
 	local PKG_NAME=$1
@@ -123,25 +116,17 @@ UPDATE_VERSION() {
 	done
 }
 
-#UPDATE_VERSION "软件包名" "测试版，true，可选，默认为否"
-#UPDATE_VERSION "sing-box"
-#UPDATE_VERSION "tailscale"
-
-
-
 #删除官方的默认插件
 rm -rf ../feeds/luci/applications/luci-app-{passwall*,mosdns,dockerman,dae*,bypass*}
 rm -rf ../feeds/packages/net/{v2ray-geodata,dae*}
-#rm -rf ../package/qca-nss/qca-ssdk
 cp -r $GITHUB_WORKSPACE/package/* ./
-#修复daed/Makefile
-#rm -rf luci-app-daed/daed/Makefile && cp -r $GITHUB_WORKSPACE/patches/daed/Makefile luci-app-daed/daed/
-sed -i 's/pnpm install ; \\/pnpm install --no-frozen-lockfile ; \\/g' luci-app-daed/daed/Makefile
-#sed -i 's|github.com/daeuniverse/quic-go|github.com/olicesx/quic-go|g' luci-app-daed/daed/Makefile
 
-sed -i 's|/run/i\\  procd_set_param|/procd_set_param command/i \\\tprocd_set_param|g' luci-app-daed/luci-app-daed/root/etc/init.d/luci_daed
-#cat luci-app-daed/daed/Makefile
-#修复libubox报错
-#sed -i '/include $(INCLUDE_DIR)\/cmake.mk/a PKG_BUILD_FLAGS:=no-werror' ../package/libs/libubox/Makefile
-#sed -i 's|TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include|& -Wno-error=format-nonliteral -Wno-format-nonliteral|' ../package/libs/libubox/Makefile
-#cat ../package/libs/libubox/Makefile
+# ==================== 【全局跨核心路径双向对齐守护补丁】 ====================
+# 动态定位 v2ray-geodata 路径，向其中注入 daed 的地理文件软连接，确保 eBPF 核心不抓瞎
+GEODATA_MAKEFILE=$(find ../feeds/packages/ -maxdepth 4 -type f -wholename "*/v2ray-geodata/Makefile" 2>/dev/null | head -n 1)
+if [ -n "$GEODATA_MAKEFILE" ] && [ -f "$GEODATA_MAKEFILE" ]; then
+	echo "[路径对齐] 正在为 v2ray-geodata 织入 daed 核心软连接补丁..."
+	sed -i '/usr\/share\/v2ray\/geoip.dat/a \\t\$(INSTALL_DIR) \$(1)\/usr\/share\/daed\n\t\$(LN) ..\/v2ray\/geoip.dat \$(1)\/usr\/share\/daed\/geoip.dat' "$GEODATA_MAKEFILE"
+	sed -i '/usr\/share\/v2ray\/geosite.dat/a \\t\$(INSTALL_DIR) \$(1)\/usr\/share\/daed\n\t\$(LN) ..\/v2ray\/geosite.dat \$(1)\/usr\/share\/daed\/geosite.dat' "$GEODATA_MAKEFILE"
+fi
+# ===========================================================================
