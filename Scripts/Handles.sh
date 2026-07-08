@@ -107,3 +107,11 @@ if [ -d *"luci-app-netspeedtest"* ]; then
 
 	cd $PKG_PATH && echo "netspeedtest has been fixed!"
 fi
+
+# ==================== 【内核 6.18 排雷：暴力切除冲突补丁】 ====================
+echo " "
+echo ">>> 检测到 Linux 6.18 内核环境，正在物理切除冲突的 712 qca8k 补丁..."
+# 由于 Handles.sh 同样运行在 package/ 目录下，使用 ../target/ 准确回溯定位
+find ../target/linux/ -name "712-net-dsa-qca8k-enable-assisted-learning-on-CPU-port.patch" -type f -delete
+echo ">>> 冲突补丁切除完成，高通 DSA 驱动已恢复 6.18 原生状态！"
+# ===========================================================================
